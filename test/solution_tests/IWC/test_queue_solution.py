@@ -91,3 +91,12 @@ def test_dependency_timestamp_ordering() -> None:
             call_dequeue().expect("credit_check", 1),
         ]
     )
+
+def test_deduplication_later_timestamp() -> None:
+    run_queue(
+        [
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=10)).expect(2),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=5)).expect(3),
+            call_dequeue().expect("bank_statements", 2),
+            call_dequeue().expect("companies_house", 1),
+    )    
