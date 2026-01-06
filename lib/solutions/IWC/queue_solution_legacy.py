@@ -98,6 +98,9 @@ class Queue:
         return timestamp
 
     def _should_deprioritise_bank_statements(self, task: TaskSubmission) -> bool:
+        if task.provider != "bank_statements":
+            return False
+
         if len(self._queue) == 0:
             return True
 
@@ -289,4 +292,5 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 

@@ -187,10 +187,13 @@ def test_age_after_dequeue() -> None:
 def test_time_sensitive_bank_statements() -> None:
     run_queue(
         [
-            call_enqueue("companies_house", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("id_verification", 2, iso_ts(delta_minutes=15)).expect(2),
-            call_enqueue("id_verification", 3, iso_ts(delta_minutes=15)).expect(3),
-            call_dequeue().expect("companies_house", 1),
+            call_enqueue("id_verification", 1, iso_ts(delta_minutes=0)).expect(1),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=1)).expect(2),
+            call_enqueue("companies_house", 3, iso_ts(delta_minutes=7)).expect(3),
+            call_dequeue().expect("id_verification", 1),
+            call_dequeue().expect("bank_statements", 2),
+            call_dequeue().expect("companies_house", 3),
         ]
     )
+
 
