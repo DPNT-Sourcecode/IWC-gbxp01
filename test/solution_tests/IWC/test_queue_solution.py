@@ -71,4 +71,27 @@ def test_timestamp_ordering_same_user() -> None:
     )
 
 
+def test_dependency_resolution() -> None:
+    run_queue(
+        [
+            call_enqueue("credit_check", 1, iso_ts(delta_minutes=10)).expect(2),
+            call_dequeue().expect("companies_house", 1),
+            call_dequeue().expect("credit_check", 1),
+        ]
+    )
+
+
+def test_dependency_timestamp_ordering() -> None:
+    run_queue(
+        [
+            call_enqueue("credit_check", 1, iso_ts(delta_minutes=10)).expect(2),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=5)).expect(3),
+            call_dequeue().expect("bank_statements", 2),
+            call_dequeue().expect("companies_house", 1),
+            call_dequeue().expect("credit_check", 1),
+        ]
+    )
+
+
+
 
