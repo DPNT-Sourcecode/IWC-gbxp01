@@ -100,14 +100,19 @@ class Queue:
     def _should_deprioritise_bank_statements(self, task: TaskSubmission) -> bool:
         if task.provider != "bank_statements":
             return False
+        print(f"b - queue len = {len(self._queue)}")
 
         if len(self._queue) == 0:
             return True
 
+        print("c")
         timestamps = [self._timestamp_for_task(t) for t in self._queue]
         newest_timestamp = max(timestamps)
         task_timestamp = self._timestamp_for_task(task)
         internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
+        print(
+            f"DEBUG: {task.provider} age={internal_age_seconds} returning {internal_age_seconds < 300}"
+        )
 
         return internal_age_seconds < 300
 
@@ -292,5 +297,6 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
 
