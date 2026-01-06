@@ -100,7 +100,9 @@ class Queue:
     def _should_deprioritise_bank_statements(self, task: TaskSubmission) -> bool:
         if task.provider != "bank_statements":
             return False
-        print(f"b - queue len = {len(self._queue)}")
+        print(
+            f"b - self={type(self).__name__}, queue len = {len(self._queue)}, id={id(self)}"
+        )
 
         if len(self._queue) == 0:
             return True
@@ -177,7 +179,7 @@ class Queue:
             else:
                 metadata["group_earliest_timestamp"] = current_earliest
                 metadata["priority"] = priority_level
-
+        print(f"len of queue {len(self._queue)}")
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
@@ -297,6 +299,7 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
 
 
