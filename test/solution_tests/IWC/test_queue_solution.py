@@ -123,4 +123,3 @@ def test_deduplication_with_dependencies() -> None:
             call_size().expect(2),
         ]
     )
-
