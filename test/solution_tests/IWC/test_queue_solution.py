@@ -85,7 +85,7 @@ def test_dependency_timestamp_ordering() -> None:
     run_queue(
         [
             call_enqueue("credit_check", 1, iso_ts(delta_minutes=10)).expect(2),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=5)).expect(3),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=6)).expect(3),
             call_dequeue().expect("companies_house", 1),
             call_dequeue().expect("credit_check", 1),
             call_dequeue().expect("bank_statements", 2),
@@ -195,3 +195,36 @@ def test_time_sensitive_bank_statements() -> None:
             call_dequeue().expect("companies_house", 3),
         ]
     )
+
+
+def test_bank_statements_with_different_ages() -> None:
+    run_queue(
+        [
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=4)).expect(2),
+            call_enqueue("id_verification", 3, iso_ts(delta_minutes=5)).expect(3),
+            call_enqueue("companies_house", 4, iso_ts(delta_minutes=10)).expect(4),
+            call_dequeue().expect("bank_statements", 1),
+            call_dequeue().expect("bank_statements", 2),
+            call_dequeue().expect("id_verification", 3),
+            call_dequeue().expect("companies_house", 4),
+        ]
+    )
+
+
+def test_time_sensitive_bank_statements_with_rule_of_3() -> None:
+    run_queue(
+        [
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=4)).expect(2),
+            call_enqueue("id_verification", 3, iso_ts(delta_minutes=5)).expect(3),
+            call_enqueue("companies_house", 4, iso_ts(delta_minutes=10)).expect(4),
+            call_enqueue("companies_house", 4, iso_ts(delta_minutes=10)).expect(5),
+            call_dequeue().expect("bank_statements", 1),
+            call_dequeue().expect("bank_statements", 2),
+            call_dequeue().expect("id_verification", 3),
+            call_dequeue().expect("companies_house", 4),
+            call_dequeue().expect("companies_house", 4),
+        ]
+    )
+
