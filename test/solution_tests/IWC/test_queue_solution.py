@@ -195,5 +195,3 @@ def test_time_sensitive_bank_statements() -> None:
             call_dequeue().expect("companies_house", 3),
         ]
     )
-
-
