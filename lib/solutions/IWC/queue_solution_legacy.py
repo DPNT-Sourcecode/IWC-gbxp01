@@ -97,21 +97,6 @@ class Queue:
             return datetime.fromisoformat(timestamp).replace(tzinfo=None)
         return timestamp
 
-    @staticmethod
-    def _should_deprioritise_bank_statements(
-        task: TaskSubmission, newest_timestamp
-    ) -> bool:
-        if task.provider != "bank_statements":
-            return False
-
-        if newest_timestamp is None:
-            return True
-
-        task_timestamp = Queue._timestamp_for_task(task)
-        internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
-
-        return internal_age_seconds < 300
-
     def enqueue(self, item: TaskSubmission) -> int:
         tasks = [*self._collect_dependencies(item), item]
 
@@ -174,11 +159,31 @@ class Queue:
                 metadata["group_earliest_timestamp"] = current_earliest
                 metadata["priority"] = priority_level
 
+        if self._queue:
+            timestamps = [self._timestamp_for_task(t) for t in self._queue]
+            newest_timestamp = max(timestamps)
+        else:
+            newest_timestamp = None
+
+        def _should_deprioritise_bank_statements(
+            task: TaskSubmission, newest_timestamp
+        ) -> bool:
+            if task.provider != "bank_statements":
+                return False
+
+            if newest_timestamp is None:
+                return True
+
+            task_timestamp = Queue._timestamp_for_task(task)
+            internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
+
+            return internal_age_seconds < 300
+
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
                 self._earliest_group_timestamp_for_task(i),
-                self._should_deprioritise_bank_statements(i),
+                _should_deprioritise_bank_statements(i),
                 self._timestamp_for_task(i),
             )
         )
@@ -293,6 +298,7 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
 
 
