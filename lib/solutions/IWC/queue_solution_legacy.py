@@ -173,25 +173,25 @@ class Queue:
 
         def _should_deprioritise_bank_statements(task: TaskSubmission) -> int:
             if task.provider != "bank_statements":
-                return BankStatementPriority.NORMAL
+                return 0
 
             if newest_timestamp is None:
-                return BankStatementPriority.DEPRIORITISED
+                return 1
 
             task_timestamp = Queue._timestamp_for_task(task)
             internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
 
             if internal_age_seconds >= 300:
-                return BankStatementPriority.TIME_SENSITIVE
+                return 0
             else:
-                return BankStatementPriority.DEPRIORITISED
+                return 1
 
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
                 self._earliest_group_timestamp_for_task(i),
-                _should_deprioritise_bank_statements(i),
                 self._timestamp_for_task(i),
+                _should_deprioritise_bank_statements(i),
             )
         )
 
@@ -305,4 +305,5 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
