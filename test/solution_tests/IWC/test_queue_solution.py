@@ -91,7 +91,3 @@ def test_dependency_timestamp_ordering() -> None:
             call_dequeue().expect("credit_check", 1),
         ]
     )
-
-
-
-
