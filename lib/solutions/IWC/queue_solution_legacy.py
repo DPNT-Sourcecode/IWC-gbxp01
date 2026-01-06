@@ -97,24 +97,18 @@ class Queue:
             return datetime.fromisoformat(timestamp).replace(tzinfo=None)
         return timestamp
 
-    def _should_deprioritise_bank_statements(self, task: TaskSubmission) -> bool:
+    @staticmethod
+    def _should_deprioritise_bank_statements(
+        task: TaskSubmission, newest_timestamp
+    ) -> bool:
         if task.provider != "bank_statements":
             return False
-        print(
-            f"b - self={type(self).__name__}, queue len = {len(self._queue)}, id={id(self)}"
-        )
 
-        if len(self._queue) == 0:
+        if newest_timestamp is None:
             return True
 
-        print("c")
-        timestamps = [self._timestamp_for_task(t) for t in self._queue]
-        newest_timestamp = max(timestamps)
-        task_timestamp = self._timestamp_for_task(task)
+        task_timestamp = Queue._timestamp_for_task(task)
         internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
-        print(
-            f"DEBUG: {task.provider} age={internal_age_seconds} returning {internal_age_seconds < 300}"
-        )
 
         return internal_age_seconds < 300
 
@@ -179,7 +173,7 @@ class Queue:
             else:
                 metadata["group_earliest_timestamp"] = current_earliest
                 metadata["priority"] = priority_level
-        print(f"len of queue {len(self._queue)}")
+
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
@@ -299,6 +293,7 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
 
 
