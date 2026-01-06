@@ -41,8 +41,8 @@ def test_rule_of_3_with_timestamps() -> None:
             call_dequeue().expect("id_verification", 2),
             call_dequeue().expect("bank_statements", 2),
             call_dequeue().expect("companies_house", 1),
-            call_dequeue().expect("bank_statements", 1),
             call_dequeue().expect("id_verification", 1),
+            call_dequeue().expect("bank_statements", 1),
         ]
     )
 
@@ -86,9 +86,9 @@ def test_dependency_timestamp_ordering() -> None:
         [
             call_enqueue("credit_check", 1, iso_ts(delta_minutes=10)).expect(2),
             call_enqueue("bank_statements", 2, iso_ts(delta_minutes=5)).expect(3),
-            call_dequeue().expect("bank_statements", 2),
             call_dequeue().expect("companies_house", 1),
             call_dequeue().expect("credit_check", 1),
+            call_dequeue().expect("bank_statements", 2),
         ]
     )
 
@@ -123,3 +123,28 @@ def test_deduplication_with_dependencies() -> None:
             call_size().expect(2),
         ]
     )
+
+
+def test_bank_statements_deprioritised() -> None:
+    run_queue(
+        [
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
+            call_enqueue("id_verification", 2, iso_ts(delta_minutes=1)).expect(2),
+            call_dequeue().expect("id_verification", 2),
+            call_dequeue().expect("bank_statements", 1),
+        ]
+    )
+
+
+def test_bank_statements_deprioritised_with_rule_of_3() -> None:
+    run_queue(
+        [
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
+            call_enqueue("companies_house", 1, iso_ts(delta_minutes=1)).expect(2),
+            call_enqueue("id_verification", 1, iso_ts(delta_minutes=2)).expect(3),
+            call_dequeue().expect("companies_house", 1),
+            call_dequeue().expect("id_verification", 1),
+            call_dequeue().expect("bank_statements", 1),
+        ]
+    )
+
