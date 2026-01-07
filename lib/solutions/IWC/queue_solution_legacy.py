@@ -52,12 +52,6 @@ REGISTERED_PROVIDERS: list[Provider] = [
 ]
 
 
-class BankStatementPriority(IntEnum):
-    TIME_SENSITIVE = -1
-    NORMAL = 0
-    DEPRIORITISED = 1
-
-
 class Queue:
     def __init__(self):
         self._queue = []
@@ -165,33 +159,12 @@ class Queue:
                 metadata["group_earliest_timestamp"] = current_earliest
                 metadata["priority"] = priority_level
 
-        if self._queue:
-            timestamps = [self._timestamp_for_task(t) for t in self._queue]
-            newest_timestamp = max(timestamps)
-        else:
-            newest_timestamp = None
-
-        def _should_deprioritise_bank_statements(task: TaskSubmission) -> int:
-            if task.provider != "bank_statements":
-                return 0
-
-            if newest_timestamp is None:
-                return 1
-
-            task_timestamp = Queue._timestamp_for_task(task)
-            internal_age_seconds = (newest_timestamp - task_timestamp).total_seconds()
-
-            if internal_age_seconds >= 300:
-                return 0
-            else:
-                return 1
-
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
                 self._earliest_group_timestamp_for_task(i),
+                i.provider == "bank_statements",  # deprioritise bank_statements
                 self._timestamp_for_task(i),
-                _should_deprioritise_bank_statements(i),
             )
         )
 
@@ -305,3 +278,4 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+

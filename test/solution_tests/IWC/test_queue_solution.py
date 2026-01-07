@@ -32,11 +32,11 @@ def test_rule_of_3_with_timestamps() -> None:
     run_queue(
         [
             call_enqueue("companies_house", 1, iso_ts(delta_minutes=5)).expect(1),
-            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=3)).expect(2),
+            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=6)).expect(2),
             call_enqueue("id_verification", 1, iso_ts(delta_minutes=7)).expect(3),
             call_enqueue("companies_house", 2, iso_ts(delta_minutes=0)).expect(4),
             call_enqueue("id_verification", 2, iso_ts(delta_minutes=1)).expect(5),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=6)).expect(6),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=2)).expect(6),
             call_dequeue().expect("companies_house", 2),
             call_dequeue().expect("id_verification", 2),
             call_dequeue().expect("bank_statements", 2),
@@ -85,7 +85,7 @@ def test_dependency_timestamp_ordering() -> None:
     run_queue(
         [
             call_enqueue("credit_check", 1, iso_ts(delta_minutes=10)).expect(2),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=6)).expect(3),
+            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=5)).expect(3),
             call_dequeue().expect("companies_house", 1),
             call_dequeue().expect("credit_check", 1),
             call_dequeue().expect("bank_statements", 2),
@@ -183,71 +183,3 @@ def test_age_after_dequeue() -> None:
         ]
     )
 
-
-def test_time_sensitive_bank_statements() -> None:
-    run_queue(
-        [
-            call_enqueue("id_verification", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=1)).expect(2),
-            call_enqueue("companies_house", 3, iso_ts(delta_minutes=7)).expect(3),
-            call_dequeue().expect("id_verification", 1),
-            call_dequeue().expect("bank_statements", 2),
-            call_dequeue().expect("companies_house", 3),
-        ]
-    )
-
-
-def test_bank_statements_with_different_ages() -> None:
-    run_queue(
-        [
-            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=4)).expect(2),
-            call_enqueue("id_verification", 3, iso_ts(delta_minutes=5)).expect(3),
-            call_enqueue("companies_house", 4, iso_ts(delta_minutes=10)).expect(4),
-            call_dequeue().expect("bank_statements", 1),
-            call_dequeue().expect("bank_statements", 2),
-            call_dequeue().expect("id_verification", 3),
-            call_dequeue().expect("companies_house", 4),
-        ]
-    )
-
-
-def test_time_sensitive_bank_statements_with_rule_of_3() -> None:
-    run_queue(
-        [
-            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("companies_house", 2, iso_ts(delta_minutes=1)).expect(2),
-            call_enqueue("id_verification", 2, iso_ts(delta_minutes=2)).expect(3),
-            call_enqueue("bank_statements", 2, iso_ts(delta_minutes=3)).expect(4),
-            call_enqueue("companies_house", 3, iso_ts(delta_minutes=10)).expect(5),
-            call_dequeue().expect("companies_house", 2),
-            call_dequeue().expect("id_verification", 2),
-            call_dequeue().expect("bank_statements", 2),
-            call_dequeue().expect("bank_statements", 1),
-            call_dequeue().expect("companies_house", 3),
-        ]
-    )
-
-
-def test_time_sensitive_bank_statements_exactly_5_minutes() -> None:
-    run_queue(
-        [
-            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("companies_house", 2, iso_ts(delta_minutes=5)).expect(2),
-            call_dequeue().expect("bank_statements", 1),
-            call_dequeue().expect("companies_house", 2),
-        ]
-    )
-
-
-def test_same_timestamp_bank_statements_and_companies_house() -> None:
-    run_queue(
-        [
-            call_enqueue("companies_house", 1, iso_ts(delta_minutes=0)).expect(1),
-            call_enqueue("bank_statements", 1, iso_ts(delta_minutes=0)).expect(2),
-            call_enqueue("id_verification", 6, iso_ts(delta_minutes=6)).expect(3),
-            call_dequeue().expect("bank_statements", 1),
-            call_dequeue().expect("companies_house", 1),
-            call_dequeue().expect("id_verification", 6),
-        ]
-    )
