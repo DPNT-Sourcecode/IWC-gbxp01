@@ -163,8 +163,10 @@ class Queue:
             key=lambda i: (
                 self._priority_for_task(i),
                 self._earliest_group_timestamp_for_task(i),
-                i.provider == "bank_statements",  # deprioritise bank_statements
-                self._timestamp_for_task(i),
+                MAX_TIMESTAMP
+                if (self.age < 300 and i.provider == "bank_statements")
+                else self._timestamp_for_task(i),
+                i.provider != "bank_statements",
             )
         )
 
@@ -278,3 +280,4 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
