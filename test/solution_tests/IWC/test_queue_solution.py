@@ -251,4 +251,3 @@ def test_same_timestamp_bank_statements_and_companies_house() -> None:
             call_dequeue().expect("id_verification", 6),
         ]
     )
-
