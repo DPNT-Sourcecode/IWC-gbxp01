@@ -161,33 +161,11 @@ class Queue:
 
         newest = max(self._timestamp_for_task(t) for t in self._queue)
 
-        def sort_key(i):
-            timestamp = self._timestamp_for_task(i)
-            is_bank_statements = i.provider == "bank_statements"
-            is_time_sensitive = (
-                is_bank_statements and (newest - timestamp).total_seconds() >= 300
-            )
-            priority = self._priority_for_task(i)
-
-            raw_group_ts = self._earliest_group_timestamp_for_task(i)
-            if isinstance(raw_group_ts, str):
-                group_timestamp = datetime.fromisoformat(raw_group_ts).replace(
-                    tzinfo=None
-                )
-            elif isinstance(raw_group_ts, datetime):
-                group_timestamp = raw_group_ts.replace(tzinfo=None)
-            else:
-                group_timestamp = raw_group_ts
-
-            return (
-                timestamp,
-                0 if is_time_sensitive else priority,
-                group_timestamp,
-                MAX_TIMESTAMP
-                if (is_bank_statements and not is_time_sensitive)
-                else timestamp,
-                not is_bank_statements,
-            )
+        has_time_sensitive = any(
+            t.provider == "bank_statements"
+            and (newest - self._timestamp_for_task(t)).total_seconds() >= 300
+            for t in self._queue
+        )
 
         self._queue.sort(key=sort_key)
 
@@ -301,4 +279,5 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
