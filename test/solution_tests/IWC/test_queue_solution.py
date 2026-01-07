@@ -182,4 +182,3 @@ def test_age_after_dequeue() -> None:
             call_age().expect(0),
         ]
     )
-
