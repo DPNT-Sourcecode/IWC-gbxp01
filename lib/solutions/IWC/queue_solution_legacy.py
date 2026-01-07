@@ -168,7 +168,16 @@ class Queue:
                 is_bank_statements and (newest - timestamp).total_seconds() >= 300
             )
             priority = self._priority_for_task(i)
-            group_timestamp = self._earliest_group_timestamp_for_task(i)
+
+            raw_group_timestamp = self._earliest_group_timestamp_for_task(i)
+            if isinstance(raw_group_timestamp, str):
+                group_timestamp = datetime.fromisoformat(raw_group_timestamp).replace(
+                    tzinfo=None
+                )
+            elif isinstance(raw_group_timestamp, datetime):
+                group_timestamp = raw_group_timestamp.replace(tzinfo=None)
+            else:
+                group_timestamp = raw_group_timestamp
 
             if is_time_sensitive:
                 primary = timestamp
@@ -306,4 +315,5 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
