@@ -160,19 +160,41 @@ class Queue:
                 metadata["priority"] = priority_level
 
         newest = max(self._timestamp_for_task(t) for t in self._queue)
-        self._queue.sort(
-            key=lambda i: (
-                self._priority_for_task(i),
-                self._earliest_group_timestamp_for_task(i),
+
+        def sort_key(i):
+            timestamp = self._timestamp_for_task(i)
+            is_bank_statements = i.provider == "bank_statements"
+            is_time_sensitive = (
+                is_bank_statements and (newest - timestamp).total_seconds() >= 300
+            )
+            priority = self._priority_for_task(i)
+            group_timestamp = self._earliest_group_timestamp_for_task(i)
+
+            if is_time_sensitive:
+                primary = timestamp
+            elif priority == Priority.HIGH:
+                primary = group_timestamp
+            elif is_bank_statements:
+                primary = MAX_TIMESTAMP
+            else:
+                primary = timestamp
+
+            secondary = 0 if is_time_sensitive else priority
+            tertiary = (
                 MAX_TIMESTAMP
                 if (
-                    i.provider == "bank_statements"
-                    and (newest - self._timestamp_for_task(i)).total_seconds() < 300
+                    priority == Priority.HIGH
+                    and is_bank_statements
+                    and not is_time_sensitive
                 )
-                else self._timestamp_for_task(i),
-                i.provider != "bank_statements",
+                else timestamp
             )
-        )
+            quarternary = timestamp
+            quinary = not is_bank_statements
+
+            return (primary, secondary, tertiary, quarternary, quinary)
+
+        self._queue.sort(key=sort_key)
 
         task = self._queue.pop(0)
         return TaskDispatch(
@@ -284,3 +306,4 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
