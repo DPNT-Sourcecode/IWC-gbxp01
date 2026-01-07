@@ -169,39 +169,15 @@ class Queue:
             )
             priority = self._priority_for_task(i)
 
-            raw_group_timestamp = self._earliest_group_timestamp_for_task(i)
-            if isinstance(raw_group_timestamp, str):
-                group_timestamp = datetime.fromisoformat(raw_group_timestamp).replace(
+            raw_group_ts = self._earliest_group_timestamp_for_task(i)
+            if isinstance(raw_group_ts, str):
+                group_timestamp = datetime.fromisoformat(raw_group_ts).replace(
                     tzinfo=None
                 )
-            elif isinstance(raw_group_timestamp, datetime):
-                group_timestamp = raw_group_timestamp.replace(tzinfo=None)
+            elif isinstance(raw_group_ts, datetime):
+                group_timestamp = raw_group_ts.replace(tzinfo=None)
             else:
-                group_timestamp = raw_group_timestamp
-
-            if is_time_sensitive:
-                primary = timestamp
-            elif priority == Priority.HIGH:
-                primary = group_timestamp
-            elif is_bank_statements:
-                primary = MAX_TIMESTAMP
-            else:
-                primary = timestamp
-
-            secondary = 0 if is_time_sensitive else priority
-            tertiary = (
-                MAX_TIMESTAMP
-                if (
-                    priority == Priority.HIGH
-                    and is_bank_statements
-                    and not is_time_sensitive
-                )
-                else timestamp
-            )
-            quarternary = timestamp
-            quinary = not is_bank_statements
-
-            return (primary, secondary, tertiary, quarternary, quinary)
+                group_timestamp = raw_group_ts
 
         self._queue.sort(key=sort_key)
 
@@ -315,5 +291,3 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
-
-
