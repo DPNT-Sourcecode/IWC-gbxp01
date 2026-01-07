@@ -159,12 +159,16 @@ class Queue:
                 metadata["group_earliest_timestamp"] = current_earliest
                 metadata["priority"] = priority_level
 
+        newest = max(self._timestamp_for_task(t) for t in self._queue)
         self._queue.sort(
             key=lambda i: (
                 self._priority_for_task(i),
                 self._earliest_group_timestamp_for_task(i),
                 MAX_TIMESTAMP
-                if (self.age < 300 and i.provider == "bank_statements")
+                if (
+                    i.provider == "bank_statements"
+                    and (newest - self._timestamp_for_task(i)).total_seconds() < 300
+                )
                 else self._timestamp_for_task(i),
                 i.provider != "bank_statements",
             )
@@ -280,4 +284,5 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
