@@ -179,6 +179,16 @@ class Queue:
             else:
                 group_timestamp = raw_group_ts
 
+            return (
+                timestamp,
+                0 if is_time_sensitive else priority,
+                group_timestamp,
+                MAX_TIMESTAMP
+                if (is_bank_statements and not is_time_sensitive)
+                else timestamp,
+                not is_bank_statements,
+            )
+
         self._queue.sort(key=sort_key)
 
         task = self._queue.pop(0)
@@ -291,3 +301,4 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
