@@ -167,7 +167,36 @@ class Queue:
             for t in self._queue
         )
 
-        self._queue.sort(key=sort_key)
+        if has_time_sensitive:
+            self._queue.sort(
+                key=lambda i: (
+                    self._timestamp_for_task(i),
+                    0
+                    if (
+                        i.provider == "bank_statements"
+                        and (newest - self._timestamp_for_task(i)).total_seconds()
+                        >= 300
+                    )
+                    else self._priority_for_task(i),
+                    0
+                    if (
+                        i.provider == "bank_statements"
+                        and (newest - self._timestamp_for_task(i)).total_seconds()
+                        >= 300
+                    )
+                    else (1 if i.provider == "bank_statements" else 0),
+                    i.provider != "bank_statements",
+                )
+            )
+        else:
+            self._queue.sort(
+                key=lambda i: (
+                    self._priority_for_task(i),
+                    self._earliest_group_timestamp_for_task(i),
+                    i.provider == "bank_statements",
+                    self._timestamp_for_task(i),
+                )
+            )
 
         task = self._queue.pop(0)
         return TaskDispatch(
@@ -279,5 +308,6 @@ async def queue_worker():
         logger.info(f"Finished task: {task}")
 ```
 """
+
 
 
